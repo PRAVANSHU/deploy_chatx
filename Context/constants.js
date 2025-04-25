@@ -3,7 +3,7 @@ import chatAppJSON from "./ChatApp.json";
 import updatedABI from "./updatedChatAppABI.json";
 
 export const ChatAppAddress =
-"0x13c075d273eF792a9a3193b54cecd4AB330F159A";
+"0x66526d4052AF033D6e11a1aA63Db04718Cd23276";
 
 // Use the updated ABI instead of the old one
 export const ChatAppABI = updatedABI;
