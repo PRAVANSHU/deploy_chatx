@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: chatx
+    runtime: node
+    buildCommand: npm install --legacy-peer-deps && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: APP_URL
+        fromService:
+          name: chatx
+          type: web
+          property: url 

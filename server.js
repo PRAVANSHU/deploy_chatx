@@ -20,7 +20,7 @@ app.prepare().then(() => {
   // Initialize Socket.IO
   const io = new Server(server, {
     cors: {
-      origin: dev ? ['http://localhost:3000'] : ['https://your-production-domain.com'],
+      origin: dev ? ['http://localhost:3000'] : [process.env.APP_URL || 'https://chatx.onrender.com'],
       methods: ['GET', 'POST'],
       credentials: true
     }

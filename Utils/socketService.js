@@ -2,7 +2,7 @@ import { io } from 'socket.io-client';
 
 // Determine the socket server URL based on environment
 const SOCKET_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://your-production-domain.com' // Change to your production URL
+  ? process.env.APP_URL || 'https://chatx.onrender.com' // Use APP_URL environment variable
   : 'http://localhost:3000';
 
 // Singleton instance for socket
