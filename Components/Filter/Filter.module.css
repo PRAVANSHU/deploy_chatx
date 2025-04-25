@@ -1,0 +1,40 @@
+.Filter{
+    width: 80%;
+    margin: 1rem auto;
+}
+
+.Filter_box {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.Filter_box_left_search{
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-radius: 2rem;
+    padding-inline: 1rem;
+    background-color: rgba(0,0,0,0.25);
+    color: #f18303;
+    width: 100%;
+    max-width: 30rem;
+}
+
+.Filter_box_left_search input{
+    background-color: transparent;
+    outline: none;
+    border: none;
+    padding: 1rem;
+    color: #f18303;
+    width: 100%;
+}
+
+@media only screen and (max-width:35em) {
+    .Filter{
+        width: 90%;
+    }
+    
+    .Filter_box_left_search{
+        max-width: 100%;
+    }
+}

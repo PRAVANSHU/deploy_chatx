@@ -1,0 +1,89 @@
+.fileInputContainer {
+  position: relative;
+  display: inline-block;
+  margin-right: 0.5rem;
+}
+
+.fileButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  background-color: transparent;
+}
+
+.fileButton:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.fileButton.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.selectedFileInfo {
+  display: flex;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  max-width: 200px;
+}
+
+.fileName {
+  font-weight: 500;
+  margin-right: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fileSize {
+  color: #666;
+  margin-right: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.clearButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clearButton:hover {
+  color: #ff3b30;
+}
+
+.attachIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f182035b;
+  transition: all 0.3s ease;
+}
+
+.attachIconWrapper:hover {
+  background-color: #f18203;
+}
+
+.attachIcon {
+  filter: brightness(1.2);
+} 

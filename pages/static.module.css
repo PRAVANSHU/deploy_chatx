@@ -1,0 +1,520 @@
+/* Common Styles for Static Pages */
+.container {
+  width: 85%;
+  max-width: 1200px;
+  margin: 4rem auto;
+  padding: 2rem;
+  background-color: #1e1e1e;
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  color: #fff;
+}
+
+.header {
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #36363e;
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  color: #f18203;
+}
+
+.header p {
+  font-size: 1.1rem;
+  color: #96969f;
+}
+
+.content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.footer {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #36363e;
+  text-align: center;
+}
+
+.backBtn {
+  background-color: transparent;
+  border: 2px solid #f18203;
+  color: #f18203;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.backBtn:hover {
+  background-color: #f18203;
+  color: #fff;
+}
+
+/* Contact Page Styles */
+.contactForm {
+  flex: 1;
+  min-width: 300px;
+}
+
+.contactInfo {
+  flex: 1;
+  min-width: 300px;
+  background-color: #24242b;
+  padding: 2rem;
+  border-radius: 0.5rem;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.formGroup input,
+.formGroup textarea,
+.formGroup select {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #2c2c34;
+  border: 1px solid #36363e;
+  border-radius: 0.5rem;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.formGroup input:focus,
+.formGroup textarea:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: #f18203;
+}
+
+.formGroup textarea {
+  resize: vertical;
+}
+
+.infoItem {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.infoIcon {
+  background-color: rgba(241, 130, 3, 0.2);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  margin-right: 1rem;
+}
+
+.socialLinks {
+  margin-top: 2rem;
+}
+
+.socialIcons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.socialIcons a {
+  background-color: rgba(241, 130, 3, 0.2);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.socialIcons a:hover {
+  background-color: #f18203;
+}
+
+.submitBtn {
+  background-color: #f18203;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.submitBtn:hover {
+  background-color: #ff9a33;
+}
+
+.required {
+  color: #f18203;
+  margin-left: 3px;
+}
+
+.statusMessage {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.success {
+  background-color: rgba(46, 213, 115, 0.2);
+  border-left: 4px solid #2ed573;
+  color: #7bed9f;
+}
+
+.error {
+  background-color: rgba(255, 71, 87, 0.2);
+  border-left: 4px solid #ff4757;
+  color: #ff6b81;
+}
+
+.submitBtn:disabled {
+  background-color: #57575f;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Settings Page Styles */
+.settingsContainer {
+  display: flex;
+  gap: 2rem;
+  min-height: 500px;
+}
+
+.settingsTabs {
+  width: 200px;
+  border-right: 1px solid #36363e;
+}
+
+.tabButton {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 1rem;
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 1rem;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.tabButton:hover {
+  background-color: rgba(241, 130, 3, 0.1);
+  color: #fff;
+}
+
+.activeTab {
+  background-color: rgba(241, 130, 3, 0.2);
+  color: #f18203;
+  border-left: 3px solid #f18203;
+}
+
+.settingsContent {
+  flex: 1;
+}
+
+.tabContent {
+  padding: 0 1rem;
+}
+
+.tabContent h2 {
+  color: #f18203;
+  margin-bottom: 2rem;
+}
+
+.profileSettings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.profilePicture {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profileForm {
+  flex: 1;
+  min-width: 300px;
+}
+
+.changeImageBtn {
+  background-color: rgba(241, 130, 3, 0.2);
+  color: #f18203;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.changeImageBtn:hover {
+  background-color: rgba(241, 130, 3, 0.4);
+}
+
+.settingOption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid #36363e;
+}
+
+.settingOption h3 {
+  margin-bottom: 0.25rem;
+}
+
+.settingOption p {
+  font-size: 0.9rem;
+  color: #96969f;
+}
+
+/* Toggle Switch */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle label {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #36363e;
+  border-radius: 34px;
+  transition: .4s;
+}
+
+.toggle label::before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 4px;
+  bottom: 4px;
+  background-color: #fff;
+  border-radius: 50%;
+  transition: .4s;
+}
+
+.toggle input:checked + label {
+  background-color: #f18203;
+}
+
+.toggle input:checked + label::before {
+  transform: translateX(24px);
+}
+
+.helpText {
+  font-size: 0.85rem;
+  color: #96969f;
+  margin-top: 0.25rem;
+}
+
+.colorOptions, .themeOptions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.colorOption, .themeSwatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.activeColor, .activeTheme .themeSwatch {
+  border-color: #fff;
+}
+
+.themeOption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.themeOption span {
+  font-size: 0.8rem;
+}
+
+.dangerZone {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: rgba(255, 82, 82, 0.1);
+  border-radius: 0.5rem;
+  border-left: 4px solid #ff5252;
+}
+
+.dangerBtn {
+  background-color: rgba(255, 82, 82, 0.2);
+  color: #ff5252;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+  display: block;
+}
+
+.dangerBtn:hover {
+  background-color: rgba(255, 82, 82, 0.4);
+}
+
+/* FAQ Page Styles */
+.faqContainer {
+  margin-bottom: 3rem;
+}
+
+.faqItem {
+  margin-bottom: 1rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background-color: #24242b;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.faqQuestion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.faqQuestion:hover {
+  background-color: #2c2c34;
+}
+
+.faqOpen {
+  background-color: rgba(241, 130, 3, 0.1);
+}
+
+.faqToggle {
+  font-size: 1.5rem;
+  color: #f18203;
+}
+
+.faqAnswer {
+  padding: 0 1.25rem 1.25rem;
+  border-top: 1px solid #36363e;
+}
+
+.faqHelp {
+  text-align: center;
+  padding: 2rem;
+  background-color: #24242b;
+  border-radius: 0.5rem;
+}
+
+.faqHelp h2 {
+  margin-bottom: 1rem;
+  color: #f18203;
+}
+
+.faqHelp p {
+  margin-bottom: 1.5rem;
+}
+
+/* Terms Page Styles */
+.termsContent {
+  line-height: 1.6;
+}
+
+.termsSection {
+  margin-bottom: 2rem;
+}
+
+.termsSection h2 {
+  color: #f18203;
+  margin-bottom: 1rem;
+}
+
+.termsSection ul {
+  padding-left: 2rem;
+  margin-bottom: 1rem;
+}
+
+.termsSection ul li {
+  margin-bottom: 0.5rem;
+}
+
+.contactInfo {
+  font-weight: bold;
+  color: #f18203;
+}
+
+/* Responsive Styles */
+@media screen and (max-width: 768px) {
+  .container {
+    width: 95%;
+    padding: 1.5rem;
+    margin: 2rem auto;
+  }
+  
+  .header h1 {
+    font-size: 2rem;
+  }
+  
+  .content {
+    flex-direction: column;
+  }
+  
+  .settingsContainer {
+    flex-direction: column;
+  }
+  
+  .settingsTabs {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #36363e;
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  
+  .tabButton {
+    padding: 0.75rem;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+  }
+  
+  .activeTab {
+    border-left: none;
+    border-bottom: 3px solid #f18203;
+  }
+} 

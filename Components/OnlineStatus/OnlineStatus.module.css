@@ -1,0 +1,47 @@
+.container {
+  display: flex;
+  align-items: center;
+}
+
+.status_indicator {
+  border-radius: 50%;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+.status_sm {
+  width: 8px;
+  height: 8px;
+}
+
+.status_md {
+  width: 12px;
+  height: 12px;
+}
+
+.status_lg {
+  width: 16px;
+  height: 16px;
+}
+
+.online {
+  background-color: #4cd137;
+  box-shadow: 0 0 4px #4cd137;
+}
+
+.offline {
+  background-color: #ccc;
+}
+
+.status_text {
+  margin-left: 6px;
+  font-size: 0.85rem;
+}
+
+.online_text {
+  color: #4cd137;
+}
+
+.offline_text {
+  color: #999;
+  font-style: italic;
+} 

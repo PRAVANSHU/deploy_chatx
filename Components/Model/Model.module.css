@@ -1,0 +1,138 @@
+/* Import Google Fonts if needed */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+
+.Model {
+  width: 85%;
+  margin: 2rem auto;
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Main box layout */
+.Model_box {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 2rem;
+  align-items: center;
+}
+
+/* Left section containing image */
+.Model_box_left img {
+  width: 100%;
+  height: auto;
+  border-radius: 1rem;
+}
+
+/* Right section containing text and form */
+.Model_box_right h1 {
+  font-size: 3rem;
+  color: #f18303;
+  line-height: 1.2;
+}
+
+.Model_box_right h1 span {
+  display: block;
+  font-size: 5rem;
+  color: #fff;
+  margin-top: 0.5rem;
+}
+
+.Model_box_right p {
+  font-size: 1rem;
+  color: #ccc;
+  margin-top: 1rem;
+}
+
+.Model_box_right small {
+  font-size: 1.2rem;
+  color: #f18303;
+}
+
+/* Name and address input fields */
+.Model_box_right_name {
+  margin-top: 1.5rem;
+}
+
+.Model_box_right_name_info {
+  display: flex;
+  align-items: center;
+  margin-block: 1rem;
+  gap: 1rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.Model_box_right_name_info input {
+  width: 100%;
+  background-color: transparent;
+  outline: none;
+  border: none;
+  color: #f18303;
+  font-size: 1rem;
+}
+
+/* Submit and Cancel Buttons */
+.Model_box_right_name_btn {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.Model_box_right_name_btn button {
+  background-color: rgba(0, 0, 0, 0.5);
+  outline: none;
+  border: none;
+  color: #f18303;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.Model_box_right_name_btn button:hover {
+  background-color: #f18303;
+  color: #fff;
+}
+
+/* Responsive Design */
+@media only screen and (max-width: 35em) {
+  .Model {
+    width: 95%;
+    padding: 1.5rem;
+  }
+
+  .Model_box {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .Model_box_right h1 {
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+
+  .Model_box_right h1 span {
+    font-size: 3rem;
+  }
+
+  .Model_box_right p {
+    font-size: 0.9rem;
+  }
+
+  .Model_box_right_name_btn {
+    grid-template-columns: 1fr;
+  }
+}
