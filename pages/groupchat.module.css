@@ -250,6 +250,47 @@
   cursor: pointer;
 }
 
+/* Online indicator for friend list */
+.online_indicator {
+  width: 8px;
+  height: 8px;
+  background-color: #4CAF50;
+  border-radius: 50%;
+  margin-left: 8px;
+  display: inline-block;
+  position: relative;
+}
+
+/* Online dot for message sender */
+.online_dot {
+  width: 6px;
+  height: 6px;
+  background-color: #4CAF50;
+  border-radius: 50%;
+  margin-left: 8px;
+  display: inline-block;
+  position: relative;
+}
+
+/* Typing indicator container */
+.typing_indicator {
+  padding: 0.5rem 1rem;
+  position: absolute;
+  bottom: 60px;
+  left: 0;
+  width: 100%;
+  background-color: #24242b;
+  border-top: 1px solid #36363e;
+  z-index: 5;
+}
+
+.typing_indicator p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #96969f;
+  font-style: italic;
+}
+
 .create_group_submit_btn {
   width: 100%;
   padding: 0.75rem;
@@ -665,4 +706,11 @@
 .cancel_reply_button:hover {
   color: #f18203;
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Chat styles */
+.chat {
+  width: 100%;
+  padding: 2rem;
+  margin-top: 3rem;
 } 

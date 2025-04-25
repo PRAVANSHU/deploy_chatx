@@ -118,12 +118,127 @@ export const ChatAppProvider=({children})=>{
         fetchData();
     },[]);
     
+    // Socket connection and initialization
+    useEffect(() => {
+        if (account && userName) {
+            console.log('Initializing socket connection with account:', account);
+            
+            // Initialize socket connection with user info
+            const socket = socketService.initializeSocket({
+                address: account,
+                userName: userName
+            });
+            
+            setIsSocketConnected(socketService.isSocketConnected());
+            
+            // Subscribe to socket events
+            const unsubscribeUserStatus = socketService.subscribeToEvent('users_status', (statusData) => {
+                // Skip connection notification event
+                if (statusData.connected) return;
+                
+                console.log('Received user status update:', statusData);
+                setOnlineUsers(statusData.reduce((acc, user) => {
+                    if (user && user.address) {
+                        acc[user.address.toLowerCase()] = user;
+                    }
+                    return acc;
+                }, {}));
+            });
+            
+            const unsubscribeNewMessage = socketService.subscribeToEvent('new_message', async (messageData) => {
+                console.log('Received new direct message:', messageData);
+                
+                if (!messageData.from || !messageData.to) return;
+                
+                // Convert addresses to lowercase for comparison
+                const normalizedAccount = account.toLowerCase();
+                const normalizedFrom = messageData.from.toLowerCase();
+                const normalizedTo = messageData.to.toLowerCase();
+                const normalizedCurrentUser = currentUserAddress ? currentUserAddress.toLowerCase() : null;
+                
+                // If the message is for the current chat, update the UI immediately
+                if (normalizedTo === normalizedAccount && normalizedFrom === normalizedCurrentUser) {
+                    // Re-fetch messages to include the new one
+                    await readMessage(currentUserAddress);
+                }
+                
+                // If the message is for this user but not currently viewing that chat
+                if (normalizedTo === normalizedAccount && normalizedFrom !== normalizedCurrentUser) {
+                    // Update unread message counter
+                    setUnreadMessages(prev => ({
+                        ...prev,
+                        [normalizedFrom]: (prev[normalizedFrom] || 0) + 1
+                    }));
+                }
+            });
+            
+            const unsubscribeNewGroupMessage = socketService.subscribeToEvent('new_group_message', async (messageData) => {
+                console.log('Received new group message:', messageData);
+                
+                if (!messageData.groupId) return;
+                
+                // Convert to numbers for reliable comparison
+                const msgGroupId = Number(messageData.groupId);
+                const currentGroup = Number(currentGroupId);
+                
+                // If the message is for the current group, update the UI immediately
+                if (msgGroupId === currentGroup) {
+                    // Refresh group messages
+                    await getGroupMessages(currentGroupId);
+                } else {
+                    // Update unread message counter for group
+                    setUnreadMessages(prev => ({
+                        ...prev,
+                        [`group:${msgGroupId}`]: (prev[`group:${msgGroupId}`] || 0) + 1
+                    }));
+                }
+            });
+            
+            const unsubscribeTyping = socketService.subscribeToEvent('user_typing', (typingData) => {
+                if (!typingData.from) return;
+                
+                const normalizedFrom = typingData.from.toLowerCase();
+                
+                setTypingUsers(prev => ({
+                    ...prev,
+                    [normalizedFrom]: {
+                        isTyping: typingData.isTyping,
+                        timestamp: Date.now()
+                    }
+                }));
+            });
+            
+            // Return cleanup functions
+            return () => {
+                unsubscribeUserStatus();
+                unsubscribeNewMessage();
+                unsubscribeNewGroupMessage();
+                unsubscribeTyping();
+                
+                // Note: We don't disconnect the socket here since other components might still need it
+                // The disconnect will happen when the app unmounts
+            };
+        }
+    }, [account, userName, currentUserAddress, currentGroupId]);
+    
     //read message
     const readMessage=async(friendAddress)=>{
         try {
             const contract=await connectingWithContract();
             const read =await contract.readMessage(friendAddress);
             setFriendMsg(read);
+            
+            // Reset unread message counter for this friend
+            setUnreadMessages(prev => ({
+                ...prev,
+                [friendAddress]: 0
+            }));
+            
+            // Send read receipt via socket if connected
+            if (isSocketConnected && read.length > 0) {
+                const lastMessage = read[read.length - 1];
+                socketService.sendReadReceipt(lastMessage.id || '0', account, friendAddress);
+            }
         } catch (error) {
             console.log("Currently You have no Message")
         }
@@ -308,6 +423,15 @@ export const ChatAppProvider=({children})=>{
             const messages = await contract.getGroupMessages(groupId);
             console.log("Group messages:", messages);
             setCurrentGroupMessages(messages);
+            
+            // Reset unread counter for this group
+            if (unreadMessages[`group:${groupId}`]) {
+                setUnreadMessages(prev => ({
+                    ...prev,
+                    [`group:${groupId}`]: 0
+                }));
+            }
+            
             return messages;
         } catch (error) {
             console.error("Get group messages error:", error);
@@ -337,12 +461,33 @@ export const ChatAppProvider=({children})=>{
             const messages = await contract.getGroupMessages(groupId);
             setCurrentGroupMessages(messages);
             
+            // Send the message via socket for real-time updates
+            if (isSocketConnected) {
+                socketService.sendGroupMessage({
+                    from: account,
+                    fromName: userName,
+                    groupId: groupId,
+                    msg: msg,
+                    timestamp: Date.now(),
+                    sender: account,
+                    senderName: userName
+                });
+            }
+            
             setLoading(false);
             setError("");
+            
+            // Return the sent message for UI updates
+            return {
+                success: true,
+                message: msg,
+                timestamp: Math.floor(Date.now() / 1000)
+            };
         } catch (error) {
             console.error("Send group message error:", error);
             setError("Error sending message: " + (error.message || "Please try again"));
             setLoading(false);
+            return { success: false, error: error.message };
         }
     };
 

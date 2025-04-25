@@ -8,6 +8,7 @@ import EmojiPicker from 'emoji-picker-react'
 import FileInput from '@/Components/FileInput'
 import FileMessage from '@/Components/FileMessage'
 import UploadProgress from '@/Components/UploadProgress'
+import socketService from '@/Utils/socketService'
 
 const GroupChat = () => {
   const { 
@@ -31,7 +32,12 @@ const GroupChat = () => {
     isFileUploading,
     uploadProgress,
     isFileMessage,
-    parseFileData
+    parseFileData,
+    // Online status states
+    onlineUsers,
+    setOnlineUsers,
+    isSocketConnected,
+    setIsSocketConnected
   } = useContext(ChatAppContext)
 
   // States for UI
@@ -44,9 +50,12 @@ const GroupChat = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [selectedFile, setSelectedFile] = useState(null)
   const [replyingTo, setReplyingTo] = useState(null)
+  const [typingUsers, setTypingUsers] = useState({})
+  const [localGroupMessages, setLocalGroupMessages] = useState([])
   
   const emojiPickerRef = useRef(null)
   const messagesEndRef = useRef(null)
+  const typingTimeoutRef = useRef(null)
   
   // Scroll to bottom of messages
   const scrollToBottom = () => {
@@ -55,7 +64,7 @@ const GroupChat = () => {
   
   useEffect(() => {
     scrollToBottom()
-  }, [currentGroupMessages])
+  }, [localGroupMessages])
   
   // Close emoji picker when clicking outside
   useEffect(() => {
@@ -69,6 +78,118 @@ const GroupChat = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [emojiPickerRef]);
+  
+  // Initialize socket connection
+  useEffect(() => {
+    if (account && userName) {
+      // Initialize socket connection with user info
+      const socket = socketService.initializeSocket({
+        address: account,
+        userName: userName
+      });
+      
+      // Set socket connection status
+      setIsSocketConnected(true);
+      
+      // Clean up socket connection on unmount
+      return () => {
+        socketService.disconnectSocket();
+        setIsSocketConnected(false);
+      };
+    }
+  }, [account, userName, setIsSocketConnected]);
+  
+  // Subscribe to socket events for real-time updates
+  useEffect(() => {
+    if (isSocketConnected) {
+      // Subscribe to user status updates
+      const unsubscribeUserStatus = socketService.subscribeToEvent('users_status', (statusData) => {
+        if (statusData.connected) return; // Skip the connection notification
+        console.log("Received online status update:", statusData);
+        setOnlineUsers(statusData.reduce((acc, user) => {
+          acc[user.address.toLowerCase()] = user;
+          return acc;
+        }, {}));
+      });
+      
+      // Subscribe to new group messages
+      const unsubscribeGroupMessage = socketService.subscribeToEvent('new_group_message', (messageData) => {
+        console.log("Received new group message:", messageData);
+        if (messageData.groupId && Number(messageData.groupId) === Number(currentGroupId)) {
+          // Add the new message to the current group messages
+          setLocalGroupMessages(prev => {
+            // Check if message already exists to prevent duplicates
+            const messageExists = prev.some(msg => 
+              msg.timestamp === messageData.timestamp && 
+              msg.sender === messageData.sender && 
+              msg.msg === messageData.msg
+            );
+            
+            if (messageExists) return prev;
+            return [...prev, messageData];
+          });
+        }
+      });
+      
+      // Subscribe to typing indicators
+      const unsubscribeTyping = socketService.subscribeToEvent('user_typing', (typingData) => {
+        console.log("Received typing indicator:", typingData);
+        
+        // Check if this is a group typing indicator
+        if (typingData.to && typingData.to.startsWith('group:')) {
+          const groupId = typingData.to.replace('group:', '');
+          
+          // Only process if it's for the current group
+          if (Number(groupId) === Number(currentGroupId)) {
+            setTypingUsers(prev => ({
+              ...prev,
+              [typingData.from.toLowerCase()]: {
+                isTyping: typingData.isTyping,
+                timestamp: typingData.timestamp || Date.now()
+              }
+            }));
+          }
+        }
+      });
+      
+      // Return cleanup functions
+      return () => {
+        unsubscribeUserStatus();
+        unsubscribeGroupMessage();
+        unsubscribeTyping();
+      };
+    }
+  }, [isSocketConnected, currentGroupId, setOnlineUsers]);
+  
+  // Clean up typing indicators after timeout
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTypingUsers(prev => {
+        const now = Date.now();
+        const updated = { ...prev };
+        let changed = false;
+        
+        // Clear typing indicators older than 3 seconds
+        Object.keys(updated).forEach(userId => {
+          if (updated[userId] && now - updated[userId].timestamp > 3000 && updated[userId].isTyping) {
+            updated[userId].isTyping = false;
+            changed = true;
+          }
+        });
+        
+        return changed ? updated : prev;
+      });
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  // Sync localGroupMessages with context currentGroupMessages
+  useEffect(() => {
+    if (currentGroupMessages) {
+      setLocalGroupMessages(currentGroupMessages);
+    }
+  }, [currentGroupMessages]);
   
   // Load groups effect
   useEffect(() => {
@@ -119,6 +240,15 @@ const GroupChat = () => {
         
         if (result && result.success) {
           setSelectedFile(null);
+          
+          // Also send via socket for real-time update
+          socketService.sendGroupMessage({
+            from: account,
+            fromName: userName,
+            groupId: currentGroupId,
+            msg: JSON.stringify(result.fileData),
+            timestamp: Date.now()
+          });
         }
       } catch (error) {
         console.error("Error sending file:", error);
@@ -147,13 +277,26 @@ const GroupChat = () => {
         messageText = replyPrefix + message;
       }
       
+      // Send message to blockchain
       await sendGroupMessage({
         groupId: currentGroupId,
         msg: messageText
       });
       
+      // Also send via socket for real-time update
+      socketService.sendGroupMessage({
+        from: account,
+        fromName: userName,
+        groupId: currentGroupId,
+        msg: messageText,
+        timestamp: Date.now()
+      });
+      
       setMessage("");
       setReplyingTo(null);
+      
+      // Clear typing indicator
+      sendTypingIndicator(false);
     } catch (error) {
       console.error("Error sending message:", error);
       setLocalError("Failed to send message. Please try again.");
@@ -228,6 +371,54 @@ const GroupChat = () => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
+  // Handle typing indicator with debounce
+  const handleMessageInputChange = (e) => {
+    setMessage(e.target.value);
+    
+    // Send typing indicator
+    sendTypingIndicator(true);
+    
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Set timeout to stop typing indicator after 3 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      sendTypingIndicator(false);
+    }, 3000);
+  };
+  
+  // Cleanup typing timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
+  
+  // Send typing indicator through socket
+  const sendTypingIndicator = (isTyping) => {
+    if (!currentGroupId || !account || !isSocketConnected) return;
+    
+    console.log(`Sending typing indicator: ${isTyping} for group:${currentGroupId}`);
+    
+    try {
+      const success = socketService.sendTypingIndicator(
+        account.toLowerCase(), 
+        `group:${currentGroupId}`, 
+        isTyping
+      );
+      
+      if (!success) {
+        console.warn("Failed to send typing indicator - socket not connected");
+      }
+    } catch (error) {
+      console.error("Error sending typing indicator:", error);
+    }
+  };
+
   // New function to handle selecting a message to reply to
   const handleSelectReply = (message) => {
     setReplyingTo(message);
@@ -250,7 +441,7 @@ const GroupChat = () => {
       const originalSender = parts[1];
       const originalMsgId = parts[2];
       const originalMsgPreview = parts[3];
-      const actualMessage = parts.slice(4).join(':'); // Join the rest with colons in case the message had colons
+      const actualMessage = parts.slice(4).join(':'); // Rejoin rest in case message itself has colons
       
       return {
         originalSender,
@@ -259,44 +450,78 @@ const GroupChat = () => {
         actualMessage
       };
     } catch (error) {
-      console.error("Error parsing reply data:", error);
+      console.error('Error parsing reply data:', error);
       return null;
     }
   };
   
-  // Function to get actual message text (removes reply prefix if it exists)
+  // Function to get the actual message content from possibly reply-prefixed message
   const getMessageText = (messageText) => {
     const replyData = extractReplyData(messageText);
-    return replyData ? replyData.actualMessage : messageText;
+    if (replyData) {
+      return replyData.actualMessage;
+    }
+    return messageText;
   };
   
-  // Function to get sender name by address
+  // Get sender name from address
   const getSenderNameByAddress = (address) => {
-    // First check if it's the current user
+    // Check if this is you
     if (address.toLowerCase() === account.toLowerCase()) {
-      return "You";
+      return 'You';
     }
     
-    // Then check if it's in the current group members
-    const memberInfo = currentGroupMembers.find(member => 
-      member.memberAddress && member.memberAddress.toLowerCase() === address.toLowerCase()
+    // Try to find in currentGroupMembers
+    const memberName = currentGroupMembers.find(member => 
+      member.toLowerCase() === address.toLowerCase()
     );
     
-    if (memberInfo && memberInfo.memberName) {
-      return memberInfo.memberName;
-    }
+    if (memberName) return memberName;
     
-    // Fallback to showing address
+    // Try to find in friendLists
+    const friend = friendLists.find(f => 
+      f.pubkey.toLowerCase() === address.toLowerCase()
+    );
+    
+    if (friend) return friend.name;
+    
+    // Fallback to short address format
     return address.slice(0, 6) + '...' + address.slice(-4);
   };
 
+  // Function to check if user is online
+  const isUserOnline = (address) => {
+    if (!address || !onlineUsers) return false;
+    const userStatus = onlineUsers[address.toLowerCase()];
+    return !!userStatus?.isOnline;
+  };
+  
+  // Check if any group member is typing
+  const getTypingMembers = () => {
+    if (!currentGroupMembers || !typingUsers) return [];
+    
+    return currentGroupMembers
+      .filter(memberAddress => {
+        const lowerAddress = memberAddress.toLowerCase();
+        return typingUsers[lowerAddress]?.isTyping && 
+               lowerAddress !== account.toLowerCase();
+      })
+      .map(addr => getSenderNameByAddress(addr));
+  };
+  
+  // Display typing indicator message
+  const getTypingIndicator = () => {
+    const typingMembers = getTypingMembers();
+    
+    if (typingMembers.length === 0) return null;
+    if (typingMembers.length === 1) return `${typingMembers[0]} is typing...`;
+    if (typingMembers.length === 2) return `${typingMembers[0]} and ${typingMembers[1]} are typing...`;
+    return 'Several people are typing...';
+  };
+  
   return (
-    <div className={Style.groupchat}>
+    <div className={Style.chat}>
       <div className={Style.groupchat_box}>
-        <div className={Style.groupchat_box_header}>
-          <h2>Group Chatting</h2>
-          <p>Connect with multiple users at once</p>
-        </div>
         
         {/* Error message display */}
         {(localError || error) && (
@@ -340,6 +565,9 @@ const GroupChat = () => {
                           onChange={() => toggleFriendSelection(friend.pubkey)}
                         />
                         <label htmlFor={`friend-${i}`}>{friend.name}</label>
+                        {isUserOnline(friend.pubkey) && (
+                          <span className={Style.online_indicator} title="Online"></span>
+                        )}
                       </div>
                     ))
                   ) : (
@@ -395,8 +623,8 @@ const GroupChat = () => {
                     <div className={Style.loading_container}>
                       <p className={Style.loading_message}>Loading messages...</p>
                     </div>
-                  ) : currentGroupMessages.length > 0 ? (
-                    currentGroupMessages.map((msg, i) => {
+                  ) : localGroupMessages.length > 0 ? (
+                    localGroupMessages.map((msg, i) => {
                       const isFileMsg = isFileMessage(msg.msg);
                       const isCurrentUser = msg.sender.toLowerCase() === account.toLowerCase();
                       const replyData = !isFileMsg ? extractReplyData(msg.msg) : null;
@@ -407,7 +635,12 @@ const GroupChat = () => {
                           className={`${Style.message_item} ${isCurrentUser ? Style.my_message : ""}`}
                         >
                           <div className={Style.message_content}>
-                            <span className={Style.sender_name}>{msg.senderName}</span>
+                            <span className={Style.sender_name}>
+                              {msg.senderName || getSenderNameByAddress(msg.sender)}
+                              {isUserOnline(msg.sender) && (
+                                <span className={Style.online_dot} title="Online"></span>
+                              )}
+                            </span>
                             
                             {replyData && (
                               <div className={Style.reply_preview} onClick={() => {
@@ -452,6 +685,13 @@ const GroupChat = () => {
                   )}
                   <div ref={messagesEndRef} />
                 </div>
+                
+                {/* Typing indicator */}
+                {getTypingIndicator() && (
+                  <div className={Style.typing_indicator}>
+                    <p>{getTypingIndicator()}</p>
+                  </div>
+                )}
                 
                 {/* File upload progress indicator */}
                 {isFileUploading && (
@@ -517,7 +757,7 @@ const GroupChat = () => {
                       type="text"
                       placeholder={selectedFile ? "Press send to upload file" : "Type your message here..."}
                       value={message}
-                      onChange={(e) => setMessage(e.target.value)}
+                      onChange={handleMessageInputChange}
                       disabled={loading || isLoading || isFileUploading || selectedFile}
                     />
                   </div>

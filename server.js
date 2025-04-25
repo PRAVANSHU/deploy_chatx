@@ -7,9 +7,13 @@ const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
+// Helper to normalize addresses to lowercase
+const normalizeAddress = (address) => address ? address.toLowerCase() : null;
+
 // User status management
 const onlineUsers = new Map(); // Maps wallet addresses to socket IDs
 const userSockets = new Map(); // Maps socket IDs to wallet addresses
+const groupUsers = new Map(); // Maps group IDs to arrays of user socket IDs
 
 app.prepare().then(() => {
   const server = createServer((req, res) => {
@@ -26,44 +30,88 @@ app.prepare().then(() => {
     }
   });
 
+  // Periodically broadcast online users
+  const broadcastOnlineUsers = () => {
+    io.emit('users_status', Array.from(onlineUsers.entries()).map(([address, data]) => ({
+      address,
+      userName: data.userName,
+      isOnline: data.isOnline,
+      lastSeen: data.lastSeen
+    })));
+  };
+
+  // Start broadcasting online users every 5 seconds
+  const broadcastInterval = setInterval(broadcastOnlineUsers, 5000);
+
   // Socket.IO connection handler
   io.on('connection', (socket) => {
     console.log('New client connected:', socket.id);
 
+    // Handle heartbeat to keep connection alive
+    socket.on('heartbeat', (data) => {
+      // Respond with acknowledgment
+      socket.emit('heartbeat_ack', { timestamp: Date.now() });
+      
+      // Update last activity time for the user
+      const userData = userSockets.get(socket.id);
+      if (userData && userData.address) {
+        const userInfo = onlineUsers.get(userData.address);
+        if (userInfo) {
+          userInfo.lastSeen = new Date();
+          userInfo.isOnline = true;
+          onlineUsers.set(userData.address, userInfo);
+        }
+      }
+    });
+
     // User authentication/connection
     socket.on('user_connect', ({ address, userName }) => {
       if (!address) return;
+      
+      const normalizedAddress = normalizeAddress(address);
 
       // Store user connection info
-      userSockets.set(socket.id, { address, userName });
+      userSockets.set(socket.id, { address: normalizedAddress, userName });
       
       // Update online users
-      onlineUsers.set(address, {
+      onlineUsers.set(normalizedAddress, {
         socketId: socket.id,
         userName: userName || 'Anonymous',
         lastSeen: new Date(),
         isOnline: true
       });
       
-      // Broadcast user online status to all clients
-      io.emit('users_status', Array.from(onlineUsers.entries()).map(([address, data]) => ({
-        address,
-        userName: data.userName,
-        isOnline: data.isOnline,
-        lastSeen: data.lastSeen
-      })));
+      // Broadcast user online status to all clients immediately
+      broadcastOnlineUsers();
       
-      console.log(`User connected: ${address} (${userName || 'Anonymous'})`);
+      console.log(`User connected: ${normalizedAddress} (${userName || 'Anonymous'})`);
     });
 
     // Handle new chat message
     socket.on('send_message', (messageData) => {
-      console.log('New message:', messageData);
+      console.log('New message received:', messageData);
+      
+      let normalizedFrom, normalizedTo;
+      
+      if (messageData.from) {
+        normalizedFrom = normalizeAddress(messageData.from);
+        messageData.from = normalizedFrom;
+      }
+      
+      if (messageData.sender) {
+        const normalizedSender = normalizeAddress(messageData.sender);
+        messageData.sender = normalizedSender;
+      }
+      
+      if (messageData.to) {
+        normalizedTo = normalizeAddress(messageData.to);
+        messageData.to = normalizedTo;
+      }
       
       // For direct messages
-      if (messageData.type === 'direct' && messageData.to) {
+      if (messageData.type === 'direct' && normalizedTo) {
         // Find recipient's socket if they're online
-        const recipientData = onlineUsers.get(messageData.to);
+        const recipientData = onlineUsers.get(normalizedTo);
         if (recipientData && recipientData.socketId) {
           // Send to specific recipient
           io.to(recipientData.socketId).emit('new_message', messageData);
@@ -78,24 +126,69 @@ app.prepare().then(() => {
       } 
       // For group messages
       else if (messageData.type === 'group' && messageData.groupId) {
-        // Broadcast to everyone in the group (we'll handle group membership later)
-        io.emit('new_group_message', messageData);
+        // Format data for group message event
+        const formattedMessage = {
+          groupId: messageData.groupId,
+          sender: normalizedFrom || messageData.sender,
+          senderName: messageData.fromName || messageData.senderName,
+          msg: messageData.msg,
+          timestamp: messageData.timestamp || Date.now()
+        };
+        
+        // Broadcast to everyone (clients will filter based on group membership)
+        socket.broadcast.emit('new_group_message', formattedMessage);
+        
+        // Also send back to sender for confirmation
+        socket.emit('new_group_message', {
+          ...formattedMessage,
+          delivered: true
+        });
       }
     });
 
     // Handle typing indicator
     socket.on('typing', ({ from, to, isTyping }) => {
-      const recipientData = onlineUsers.get(to);
-      if (recipientData && recipientData.socketId) {
-        io.to(recipientData.socketId).emit('user_typing', { from, isTyping });
+      console.log('Typing indicator received:', { from, to, isTyping });
+      
+      const normalizedFrom = normalizeAddress(from);
+      
+      // Check if this is a group typing indicator
+      if (to && to.startsWith('group:')) {
+        // Broadcast typing status to all clients (they will filter based on group membership)
+        socket.broadcast.emit('user_typing', { 
+          from: normalizedFrom,
+          to: to, // Keep the group identifier as is
+          isTyping,
+          timestamp: Date.now()
+        });
+      } 
+      // Individual chat typing indicator
+      else if (to) {
+        const normalizedTo = normalizeAddress(to);
+        const recipientData = onlineUsers.get(normalizedTo);
+        if (recipientData && recipientData.socketId) {
+          io.to(recipientData.socketId).emit('user_typing', { 
+            from: normalizedFrom, 
+            isTyping,
+            timestamp: Date.now()
+          });
+        }
       }
     });
 
     // Handle read receipts
     socket.on('message_read', ({ messageId, reader, sender }) => {
-      const senderData = onlineUsers.get(sender);
+      if (!sender || !reader) return;
+      
+      const normalizedReader = normalizeAddress(reader);
+      const normalizedSender = normalizeAddress(sender);
+      
+      const senderData = onlineUsers.get(normalizedSender);
       if (senderData && senderData.socketId) {
-        io.to(senderData.socketId).emit('read_receipt', { messageId, reader });
+        io.to(senderData.socketId).emit('read_receipt', { 
+          messageId, 
+          reader: normalizedReader 
+        });
       }
     });
 
@@ -115,12 +208,7 @@ app.prepare().then(() => {
         }
         
         // Broadcast updated status
-        io.emit('users_status', Array.from(onlineUsers.entries()).map(([address, data]) => ({
-          address,
-          userName: data.userName,
-          isOnline: data.isOnline,
-          lastSeen: data.lastSeen
-        })));
+        broadcastOnlineUsers();
         
         console.log(`User disconnected: ${address}`);
       }
@@ -130,6 +218,16 @@ app.prepare().then(() => {
       console.log('Client disconnected:', socket.id);
     });
   });
+
+  // Clean up on server shutdown
+  const cleanup = () => {
+    clearInterval(broadcastInterval);
+    console.log('Cleaning up broadcast interval');
+    process.exit(0);
+  };
+
+  process.on('SIGINT', cleanup);
+  process.on('SIGTERM', cleanup);
 
   const PORT = process.env.PORT || 3000;
   server.listen(PORT, (err) => {
